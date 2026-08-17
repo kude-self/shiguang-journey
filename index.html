@@ -6,30 +6,23 @@
   <title>拾光所｜旅人紀錄系統</title>
   <link rel="stylesheet" href="./styles.css">
   <style>
-    /* 拾光所｜導覽微光互動 */
-    .nav{position:relative;isolation:isolate;transition:color .22s ease,font-weight .22s ease,transform .16s ease,background .22s ease}
+    /* 拾光所｜字體層次 × 晨光背景 */
+    body{background:radial-gradient(ellipse at 7% 4%,rgba(241,223,220,.62),transparent 29%),radial-gradient(ellipse at 94% 20%,rgba(223,232,238,.62),transparent 28%),radial-gradient(ellipse at 12% 78%,rgba(223,232,221,.48),transparent 27%),radial-gradient(ellipse at 91% 92%,rgba(241,227,200,.48),transparent 30%),linear-gradient(145deg,#fbf8f3,#f6f0e9 52%,#faf7f2);background-attachment:fixed}
+    .brand strong,.auth-card h1,.topbar h2,.section-head h3,.card>h3,.detail-top h3,.dialog-head h3{font-family:"Songti TC","Noto Serif TC","PMingLiU",serif;font-weight:600;letter-spacing:.055em}
+    .brand strong{font-size:22px;letter-spacing:.18em}.brand span{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;letter-spacing:.12em}
+    .topbar h2{font-size:31px;font-weight:500}.topbar h2::after{content:"  𓇼";font-family:serif;font-size:.48em;color:#b79a76;vertical-align:middle;letter-spacing:0}
+    .eyebrow{font-family:Georgia,"Times New Roman",serif;font-style:italic;font-weight:400;letter-spacing:.22em;color:#a88b69}
+    .stat span{font-family:"PingFang TC","Microsoft JhengHei",sans-serif;letter-spacing:.08em}.stat strong,.record-no{font-family:Georgia,"Times New Roman",serif;font-weight:400;font-style:italic;letter-spacing:-.03em}
+    .quote-card blockquote{font-family:"Kaiti TC","STKaiti","DFKai-SB","BiauKai",serif;font-size:20px;letter-spacing:.06em;line-height:2.15}.quote-card .eyebrow{font-style:normal;font-size:9px}
+    .journey-grid>.card>h3,.record-card h3{font-size:21px}.journey-grid .muted,.record-card p{font-family:"Kaiti TC","STKaiti","DFKai-SB","BiauKai",serif;font-size:14px;letter-spacing:.035em;line-height:1.8}
+    .row-main strong,.session-card h4{font-family:"Songti TC","Noto Serif TC","PMingLiU",serif;font-weight:600;letter-spacing:.035em}
+    .badge{font-family:"Kaiti TC","STKaiti","DFKai-SB","BiauKai",serif;letter-spacing:.04em}
+    .nav{position:relative;isolation:isolate;transition:color .22s ease,font-weight .22s ease,transform .16s ease,background .22s ease;letter-spacing:.045em}
     .nav::before{content:"";position:absolute;z-index:-1;left:10%;right:10%;top:12%;bottom:12%;border-radius:18px;background:transparent;opacity:0;transform:scale(.9);transition:opacity .22s ease,transform .22s ease,background .22s ease}
     .nav::after{content:"";position:absolute;left:50%;bottom:4px;width:0;height:2px;border-radius:999px;transform:translateX(-50%);background:#b99a73;opacity:0;transition:width .24s ease,opacity .2s ease,background .22s ease}
-    .nav:hover{background:transparent}.nav:active{transform:scale(.96)}
-    .nav.active{background:transparent;font-weight:600;color:#65594e}
-    .nav.active::before{opacity:.72;transform:scale(1)}
-    .nav.active::after{width:28px;opacity:.9}
-    .nav[data-page="dashboard"].active::before{background:rgba(241,227,200,.52)}
-    .nav[data-page="dashboard"].active::after{background:#b99a73}
-    .nav[data-page="travelers"].active::before{background:rgba(241,223,220,.56)}
-    .nav[data-page="travelers"].active::after{background:#c59a95}
-    .nav[data-page="journeys"].active::before{background:rgba(223,232,221,.62)}
-    .nav[data-page="journeys"].active::after{background:#91a28b}
-    .nav[data-page="sessions"].active::before{background:rgba(223,232,238,.66)}
-    .nav[data-page="sessions"].active::after{background:#8fa7b5}
-    .nav[data-page="records"].active::before{background:rgba(241,227,200,.58)}
-    .nav[data-page="records"].active::after{background:#bca173}
-    @media(max-width:900px){
-      .nav{border-radius:16px;padding-top:12px;padding-bottom:14px}
-      .nav::before{left:4%;right:4%;top:5%;bottom:5%;border-radius:16px}
-      .nav::after{bottom:6px;height:2px}
-      .nav.active::after{width:22px}
-    }
+    .nav:hover{background:transparent}.nav:active{transform:scale(.96)}.nav.active{background:transparent;font-family:"Songti TC","Noto Serif TC","PMingLiU",serif;font-weight:600;color:#65594e}.nav.active::before{opacity:.72;transform:scale(1)}.nav.active::after{width:28px;opacity:.9}
+    .nav[data-page="dashboard"].active::before{background:rgba(241,227,200,.52)}.nav[data-page="dashboard"].active::after{background:#b99a73}.nav[data-page="travelers"].active::before{background:rgba(241,223,220,.56)}.nav[data-page="travelers"].active::after{background:#c59a95}.nav[data-page="journeys"].active::before{background:rgba(223,232,221,.62)}.nav[data-page="journeys"].active::after{background:#91a28b}.nav[data-page="sessions"].active::before{background:rgba(223,232,238,.66)}.nav[data-page="sessions"].active::after{background:#8fa7b5}.nav[data-page="records"].active::before{background:rgba(241,227,200,.58)}.nav[data-page="records"].active::after{background:#bca173}
+    @media(max-width:900px){body{background-attachment:scroll}.nav{border-radius:16px;padding-top:12px;padding-bottom:14px;letter-spacing:0}.nav::before{left:4%;right:4%;top:5%;bottom:5%;border-radius:16px}.nav::after{bottom:6px;height:2px}.nav.active::after{width:22px}.topbar h2{font-size:28px}.quote-card blockquote{font-size:18px;line-height:2.05}.brand strong{font-size:20px}}
   </style>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
