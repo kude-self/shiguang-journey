@@ -1,6 +1,6 @@
 (() => {
-  // 旅人表單已不顯示旅程與狀態，但舊版 app.js 仍可能讀取這兩個 id。
-  // 保留隱藏相容欄位，避免手機快取或腳本載入順序造成 null 錯誤。
+  // 穩定版：旅人只管理基本資料；旅程、相遇紀錄與拾光冊各自處理。
+  // 舊版相容欄位只保留在背景，不出現在畫面上。
   const form = document.getElementById("travelerForm");
   if (form) {
     if (!document.getElementById("journeyType")) {
@@ -19,10 +19,6 @@
     }
   }
 
-  const originalSaveJourney = typeof saveJourney === "function" ? saveJourney : null;
-  const originalSaveSession = typeof saveSession === "function" ? saveSession : null;
-  const originalSaveRecord = typeof saveRecord === "function" ? saveRecord : null;
-
   openTraveler = function(id = null){
     const t = travelerFor(id);
     $("travelerDialogTitle").textContent = t ? "編輯旅人資料" : "新增旅人資料";
@@ -32,6 +28,8 @@
     $("concern").value = t?.concern || "";
     $("hope").value = t?.hope || "";
     $("privateNote").value = t?.private_note || "";
+    if ($("journeyType")) $("journeyType").value = "初遇";
+    if ($("travelerStatus")) $("travelerStatus").value = "active";
     $("travelerDialog").showModal();
   };
 
@@ -57,7 +55,7 @@
     toast(id ? "旅人資料已更新" : "旅人已加入");
     const openId = result.data?.id || id;
     await loadAll();
-    if (openId) openDetail(openId);
+    if (openId && travelerFor(openId)) openDetail(openId);
   };
 
   travelerRow = function(t){
@@ -78,27 +76,8 @@
     </div>`;
   };
 
-  if (originalSaveJourney) {
-    saveJourney = async function(e){
-      const detailId = currentDetailId;
-      await originalSaveJourney(e);
-      if (detailId && travelerFor(detailId)) openDetail(detailId);
-    };
-  }
-  if (originalSaveSession) {
-    saveSession = async function(e){
-      const detailId = currentDetailId;
-      await originalSaveSession(e);
-      if (detailId && travelerFor(detailId)) openDetail(detailId);
-    };
-  }
-  if (originalSaveRecord) {
-    saveRecord = async function(e){
-      const detailId = currentDetailId;
-      await originalSaveRecord(e);
-      if (detailId && travelerFor(detailId)) openDetail(detailId);
-    };
-  }
+  // 不再包裝 saveJourney / saveSession / saveRecord。
+  // 之前這裡會重複 loadAll + openDetail，是造成畫面偶發錯亂的重要來源。
 
   const style = document.createElement("style");
   style.textContent = `
@@ -106,7 +85,7 @@
     #travelersPage .traveler-row .row-main:hover strong{opacity:.78}
     #travelersPage .traveler-row .row-actions [data-open]{background:rgba(241,227,200,.60);border-color:rgba(185,154,115,.16)}
     #travelerDialog .form-grid{grid-template-columns:1fr 1fr}
-    #travelerDialog .form-grid label:nth-of-type(n+3){grid-column:1/-1}
+    #travelerDialog .form-grid label.full{grid-column:1/-1}
     @media(max-width:900px){
       #travelerDialog .form-grid{grid-template-columns:1fr}
       #travelerDialog .form-grid label{grid-column:1/-1}
@@ -115,4 +94,8 @@
     }
   `;
   document.head.appendChild(style);
+
+  window.addEventListener("error", e => {
+    console.error("Shiguang runtime error:", e.error || e.message);
+  });
 })();
