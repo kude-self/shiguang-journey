@@ -1,14 +1,27 @@
 (() => {
-  // 旅人本身只保存基本資料；旅程與狀態屬於 journeys，不再留在旅人表單。
-  ["journeyType","travelerStatus"].forEach(id => {
-    const el = document.getElementById(id);
-    const label = el?.closest("label");
-    if (label) label.remove();
-  });
+  // 旅人表單已不顯示旅程與狀態，但舊版 app.js 仍可能讀取這兩個 id。
+  // 保留隱藏相容欄位，避免手機快取或腳本載入順序造成 null 錯誤。
+  const form = document.getElementById("travelerForm");
+  if (form) {
+    if (!document.getElementById("journeyType")) {
+      const el = document.createElement("select");
+      el.id = "journeyType";
+      el.hidden = true;
+      el.innerHTML = '<option value="初遇">初遇</option>';
+      form.appendChild(el);
+    }
+    if (!document.getElementById("travelerStatus")) {
+      const el = document.createElement("select");
+      el.id = "travelerStatus";
+      el.hidden = true;
+      el.innerHTML = '<option value="active">進行中</option>';
+      form.appendChild(el);
+    }
+  }
 
-  const originalSaveJourney = saveJourney;
-  const originalSaveSession = saveSession;
-  const originalSaveRecord = saveRecord;
+  const originalSaveJourney = typeof saveJourney === "function" ? saveJourney : null;
+  const originalSaveSession = typeof saveSession === "function" ? saveSession : null;
+  const originalSaveRecord = typeof saveRecord === "function" ? saveRecord : null;
 
   openTraveler = function(id = null){
     const t = travelerFor(id);
@@ -35,14 +48,11 @@
     };
     if (!payload.name) return toast("請先填旅人稱呼");
 
-    let result;
-    if (id) {
-      result = await sb.from("travelers").update(payload).eq("id", id).select().single();
-    } else {
-      result = await sb.from("travelers").insert(payload).select().single();
-    }
-    if (result.error) return toast("儲存失敗：" + result.error.message);
+    const result = id
+      ? await sb.from("travelers").update(payload).eq("id", id).select().single()
+      : await sb.from("travelers").insert(payload).select().single();
 
+    if (result.error) return toast("儲存失敗：" + result.error.message);
     $("travelerDialog").close();
     toast(id ? "旅人資料已更新" : "旅人已加入");
     const openId = result.data?.id || id;
@@ -68,24 +78,28 @@
     </div>`;
   };
 
-  // 從旅人詳細頁操作後，自動回到同一位旅人的工作區，不必重新找人。
-  saveJourney = async function(e){
-    const detailId = currentDetailId;
-    await originalSaveJourney(e);
-    if (detailId && travelerFor(detailId)) openDetail(detailId);
-  };
-  saveSession = async function(e){
-    const detailId = currentDetailId;
-    await originalSaveSession(e);
-    if (detailId && travelerFor(detailId)) openDetail(detailId);
-  };
-  saveRecord = async function(e){
-    const detailId = currentDetailId;
-    await originalSaveRecord(e);
-    if (detailId && travelerFor(detailId)) openDetail(detailId);
-  };
+  if (originalSaveJourney) {
+    saveJourney = async function(e){
+      const detailId = currentDetailId;
+      await originalSaveJourney(e);
+      if (detailId && travelerFor(detailId)) openDetail(detailId);
+    };
+  }
+  if (originalSaveSession) {
+    saveSession = async function(e){
+      const detailId = currentDetailId;
+      await originalSaveSession(e);
+      if (detailId && travelerFor(detailId)) openDetail(detailId);
+    };
+  }
+  if (originalSaveRecord) {
+    saveRecord = async function(e){
+      const detailId = currentDetailId;
+      await originalSaveRecord(e);
+      if (detailId && travelerFor(detailId)) openDetail(detailId);
+    };
+  }
 
-  // 讓旅人頁更像入口，而不是資料清單。
   const style = document.createElement("style");
   style.textContent = `
     #travelersPage .traveler-row .row-main{cursor:pointer}
