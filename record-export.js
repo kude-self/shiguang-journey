@@ -3,6 +3,13 @@
   const recordTitle = type => type === '初遇' ? '初遇紀錄' : type === '拾光' ? '拾光紀錄' : '旅程紀錄';
   const recordTagline = type => type === '初遇' ? '一場相遇，留下第一次看見。' : type === '拾光' ? '四週整理，把一路看見的自己留下來。' : '三個月，把真正發生在生活裡的改變留下來。';
   const palette = type => type === '初遇' ? ['#f5e5e2','#fffaf5'] : type === '拾光' ? ['#e4ece1','#fffaf5'] : ['#e2ebf0','#fffaf5'];
+  const expectedSessions = type => type === '初遇' ? 1 : type === '拾光' ? 4 : 6;
+
+  function journeyProgress(j){
+    const count=(typeof sessions!=='undefined'?sessions:[]).filter(s=>s.journey_id===j.id).length;
+    const expected=expectedSessions(j.journey_type);
+    return {count,expected,percent:Math.min(100,Math.round((count/expected)*100))};
+  }
 
   function injectStyles(){
     if(document.getElementById('recordExportStyles')) return;
@@ -28,10 +35,13 @@
       .journey-story[data-type="同行"]{background:linear-gradient(135deg,rgba(255,253,249,.98),rgba(223,232,238,.62))}
       .journey-story-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.journey-story-title{font-family:"Songti TC","Noto Serif TC","PMingLiU",serif;font-size:20px;font-weight:600;letter-spacing:.04em}.journey-story-tag{font-size:11px;padding:6px 10px;border-radius:999px;background:rgba(255,255,255,.68);white-space:nowrap}.journey-story-meta{font-size:11px;color:#948b83;margin-top:5px}.journey-story-line{font-family:"Kaiti TC","STKaiti","DFKai-SB",serif;color:#847b73;font-size:13px;line-height:1.8;margin:10px 0}.journey-story-actions{display:flex;gap:7px;flex-wrap:wrap;margin:12px 0 4px}.journey-story-actions button{border:0;border-radius:11px;padding:8px 10px;background:rgba(255,255,255,.72);color:#5f574f;font-size:12px}
       .journey-counts{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}.journey-counts span{font-size:11px;border-radius:999px;padding:6px 9px;background:rgba(255,255,255,.58);color:#817870}
+      .journey-progress-wrap{margin-top:12px}.journey-progress-head{display:flex;justify-content:space-between;gap:8px;font-size:11px;color:#8e857d;margin-bottom:6px}.journey-progress-track{height:7px;border-radius:999px;background:rgba(255,255,255,.62);overflow:hidden}.journey-progress-fill{height:100%;border-radius:999px;background:rgba(170,138,102,.55);transition:width .25s ease}
+      .journey-row-progress{grid-column:1/-1;display:flex;align-items:center;gap:8px;padding:5px 2px 1px;font-size:10px;color:#968d84}.journey-row-progress .journey-progress-track{flex:1;max-width:130px;height:5px;background:rgba(170,138,102,.10)}.journey-row-progress .journey-progress-fill{background:rgba(170,138,102,.48)}
+      .journey-complete-btn{border:0;border-radius:10px;padding:7px 9px;background:rgba(223,232,221,.72);color:#5f695a;font-size:11px}.journey-complete-btn.is-completed{background:rgba(241,227,200,.68);color:#766751}
       .journey-subsection{margin-top:15px;padding-top:13px;border-top:1px solid rgba(170,138,102,.10)}.journey-subsection-title{font-size:12px;font-weight:600;letter-spacing:.06em;color:#81776f;margin-bottom:8px}
       .journey-mini{padding:10px 11px;margin-top:7px;border-radius:13px;background:rgba(255,255,255,.60);font-size:12px;line-height:1.65}.journey-mini strong{font-weight:600}.journey-mini .mini-date{color:#a0968c;font-size:10px;margin-bottom:3px}.journey-record-status{display:inline-block;margin-left:6px;font-size:10px;color:#9a8a76}
       .no-journey-invite{text-align:center;padding:28px 14px}.no-journey-invite p{color:#948b83;font-size:13px;line-height:1.8}.no-journey-invite button{margin-top:7px}
-      @media(max-width:900px){.record-export-guide{padding:14px 15px}.record-export-actions{display:grid;grid-template-columns:1fr 1fr}.record-export-actions .small-btn{width:100%;min-height:40px}.traveler-story-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.traveler-story-pill{padding:10px}.traveler-story-pill strong{font-size:21px}.journey-story{padding:16px}.journey-story-top{gap:8px}.journey-story-title{font-size:18px}.journey-story-actions{display:grid;grid-template-columns:1fr 1fr}.journey-story-actions button{min-height:39px}.journey-story-actions button:first-child{grid-column:1/-1}}
+      @media(max-width:900px){.record-export-guide{padding:14px 15px}.record-export-actions{display:grid;grid-template-columns:1fr 1fr}.record-export-actions .small-btn{width:100%;min-height:40px}.traveler-story-summary{grid-template-columns:repeat(3,minmax(0,1fr))}.traveler-story-pill{padding:10px}.traveler-story-pill strong{font-size:21px}.journey-story{padding:16px}.journey-story-top{gap:8px}.journey-story-title{font-size:18px}.journey-story-actions{display:grid;grid-template-columns:1fr 1fr}.journey-story-actions button{min-height:39px}.journey-story-actions button:first-child{grid-column:1/-1}.journey-row-progress{padding-top:7px}}
     `;
     document.head.appendChild(style);
   }
@@ -124,17 +134,47 @@
     const text=r.confirmed_text||r.draft_text||'';
     return `<div class="journey-mini"><div class="mini-date">${new Date(r.updated_at).toLocaleDateString('zh-TW')}<span class="journey-record-status">${r.status==='confirmed'?'已確認':'草稿'}</span></div>${text?`${esc(text.slice(0,120))}${text.length>120?'…':''}`:'尚未留下文案。'}</div>`;
   }
+  function progressHtml(j,compact=false){
+    const p=journeyProgress(j);
+    if(compact) return `<div class="journey-row-progress"><span>${p.count}/${p.expected} 次</span><div class="journey-progress-track"><div class="journey-progress-fill" style="width:${p.percent}%"></div></div></div>`;
+    return `<div class="journey-progress-wrap"><div class="journey-progress-head"><span>旅程進度</span><span>${p.count} / ${p.expected} 次相遇</span></div><div class="journey-progress-track"><div class="journey-progress-fill" style="width:${p.percent}%"></div></div></div>`;
+  }
   function renderJourneyStory(j){
     const jsessions=sessions.filter(s=>s.journey_id===j.id).sort((a,b)=>String(a.session_date).localeCompare(String(b.session_date)));
     const jrecords=records.filter(r=>r.journey_id===j.id).sort((a,b)=>new Date(b.updated_at)-new Date(a.updated_at));
     return `<div class="journey-story" data-type="${esc(j.journey_type)}">
       <div class="journey-story-top"><div><div class="journey-story-title">${esc(journeyName(j.journey_type))}</div><div class="journey-story-meta">開始於 ${fmt(j.start_date)}</div></div><span class="journey-story-tag">${j.status==='completed'?'已完成':'進行中'}</span></div>
       <div class="journey-story-line">${esc(journeyTagline(j.journey_type))}${j.note?`<br>${esc(j.note)}`:''}</div>
+      ${progressHtml(j)}
       <div class="journey-counts"><span>${jsessions.length} 次相遇</span><span>${jrecords.length} 份紀錄</span></div>
-      <div class="journey-story-actions"><button data-story-session="${j.id}">＋ 新增這段旅程的相遇紀錄</button><button data-story-record="${j.id}">整理紀錄</button><button data-story-edit="${j.id}">編輯旅程</button></div>
+      <div class="journey-story-actions"><button data-story-session="${j.id}">＋ 新增這段旅程的相遇紀錄</button><button data-story-record="${j.id}">整理紀錄</button><button data-story-edit="${j.id}">編輯旅程</button><button class="journey-complete-btn ${j.status==='completed'?'is-completed':''}" data-story-toggle="${j.id}">${j.status==='completed'?'重新開啟旅程':'✓ 標記完成'}</button></div>
       <div class="journey-subsection"><div class="journey-subsection-title">相遇紀錄</div>${jsessions.length?jsessions.map(s=>sessionMini(s,j)).join(''):'<div class="journey-mini">這段旅程還沒有相遇紀錄。</div>'}</div>
       <div class="journey-subsection"><div class="journey-subsection-title">拾光冊</div>${jrecords.length?jrecords.map(recordMini).join(''):'<div class="journey-mini">這段旅程還沒有保存紀錄。</div>'}</div>
     </div>`;
+  }
+
+  async function toggleJourneyStatus(id){
+    const j=journeys.find(x=>x.id===id); if(!j)return;
+    const next=j.status==='completed'?'active':'completed';
+    const {error}=await sb.from('journeys').update({status:next,updated_at:new Date().toISOString()}).eq('id',id);
+    if(error)return toast('旅程狀態更新失敗：'+error.message);
+    toast(next==='completed'?'這段旅程已完成':'這段旅程已重新開啟');
+    await loadAll();
+    if(currentDetailId) openDetail(currentDetailId);
+  }
+
+  function enhanceJourneyRows(){
+    if(typeof journeys==='undefined')return;
+    document.querySelectorAll('[data-journey-edit]').forEach(edit=>{
+      const id=edit.dataset.journeyEdit, j=journeys.find(x=>x.id===id), row=edit.closest('.traveler-row');
+      if(!j||!row)return;
+      if(!row.querySelector('.journey-row-progress')) row.insertAdjacentHTML('beforeend',progressHtml(j,true));
+      const actions=row.querySelector('.row-actions');
+      if(actions&&!actions.querySelector('[data-journey-toggle]')){
+        const b=document.createElement('button'); b.className='journey-complete-btn'+(j.status==='completed'?' is-completed':''); b.dataset.journeyToggle=id; b.textContent=j.status==='completed'?'重新開啟':'完成'; actions.appendChild(b);
+      }
+    });
+    document.querySelectorAll('[data-journey-toggle]').forEach(b=>b.onclick=e=>{e.stopPropagation();toggleJourneyStatus(b.dataset.journeyToggle);});
   }
 
   function installTravelerDetail(){
@@ -157,14 +197,27 @@
     document.querySelectorAll('[data-story-edit]').forEach(b=>b.onclick=()=>openJourney(b.dataset.storyEdit));
     document.querySelectorAll('[data-story-session]').forEach(b=>{b.onclick=()=>{const j=journeys.find(x=>x.id===b.dataset.storySession);if(j)openSession(null,j.traveler_id,j.id);};});
     document.querySelectorAll('[data-story-record]').forEach(b=>b.onclick=()=>openRecordForJourney(b.dataset.storyRecord));
+    document.querySelectorAll('[data-story-toggle]').forEach(b=>b.onclick=()=>toggleJourneyStatus(b.dataset.storyToggle));
   }
 
-  function refreshExportUi(){enhanceRecordCards();addButtons();}
+  function suggestNextStage(){
+    const dialog=document.getElementById('sessionDialog'); if(!dialog?.open)return;
+    const id=document.getElementById('sessionId')?.value;
+    if(id)return;
+    const jid=document.getElementById('sessionJourney')?.value, j=journeys.find(x=>x.id===jid), stage=document.getElementById('sessionStage');
+    if(!j||!stage||stage.value.trim())return;
+    const count=sessions.filter(s=>s.journey_id===jid).length+1;
+    if(j.journey_type==='拾光') stage.value=`Week ${Math.min(count,4)}`;
+    if(j.journey_type==='同行') stage.value=`第 ${Math.min(count,6)} 次`;
+  }
+
+  function refreshExportUi(){enhanceRecordCards();addButtons();enhanceJourneyRows();setTimeout(suggestNextStage,0);}
 
   window.addEventListener('load',()=>{
     injectStyles(); installTravelerDetail();
-    const list=document.getElementById('recordList');
-    if(list){ const observer=new MutationObserver(refreshExportUi); observer.observe(list,{childList:true,subtree:true}); }
+    const list=document.getElementById('recordList'); if(list){ const observer=new MutationObserver(refreshExportUi); observer.observe(list,{childList:true,subtree:true}); }
+    const journeyPage=document.getElementById('journeysPage'); if(journeyPage){ const observer=new MutationObserver(enhanceJourneyRows); observer.observe(journeyPage,{childList:true,subtree:true}); }
+    const sessionDialog=document.getElementById('sessionDialog'); if(sessionDialog){ const observer=new MutationObserver(()=>setTimeout(suggestNextStage,0)); observer.observe(sessionDialog,{attributes:true,attributeFilter:['open']}); }
     refreshExportUi();
   });
 })();
