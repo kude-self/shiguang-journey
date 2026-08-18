@@ -4,6 +4,24 @@
   const recordTagline = type => type === '初遇' ? '一場相遇，留下第一次看見。' : type === '拾光' ? '四週整理，把一路看見的自己留下來。' : '三個月，把真正發生在生活裡的改變留下來。';
   const palette = type => type === '初遇' ? ['#f5e5e2','#fffaf5'] : type === '拾光' ? ['#e4ece1','#fffaf5'] : ['#e2ebf0','#fffaf5'];
 
+  function injectStyles(){
+    if(document.getElementById('recordExportStyles')) return;
+    const style=document.createElement('style');
+    style.id='recordExportStyles';
+    style.textContent=`
+      .record-flow-note{margin-top:12px;padding:10px 12px;border-radius:14px;background:rgba(255,253,249,.72);border:1px dashed rgba(170,138,102,.18);font-size:12px;line-height:1.7;color:#8f877f}
+      .record-export-guide{margin:18px 0 0;padding:16px 18px;border-radius:18px;background:linear-gradient(135deg,rgba(241,223,220,.40),rgba(223,232,221,.38),rgba(223,232,238,.35));border:1px solid rgba(170,138,102,.14)}
+      .record-export-guide strong{display:block;font-family:"Songti TC","Noto Serif TC","PMingLiU",serif;font-size:17px;color:#5a5149;margin-bottom:5px}
+      .record-export-guide span{font-size:12px;line-height:1.75;color:#8f877f}
+      .record-export-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:12px;padding-top:12px;border-top:1px solid rgba(170,138,102,.12)}
+      .record-export-actions .small-btn{background:rgba(241,235,227,.92);border:1px solid rgba(170,138,102,.12)}
+      .record-export-actions .export-image{background:rgba(241,223,220,.62)}
+      .record-export-actions .export-pdf{background:rgba(223,232,221,.68)}
+      @media(max-width:900px){.record-export-guide{padding:14px 15px}.record-export-actions{display:grid;grid-template-columns:1fr 1fr}.record-export-actions .small-btn{width:100%;min-height:40px}}
+    `;
+    document.head.appendChild(style);
+  }
+
   function makeSheet(r){
     const t = travelers.find(x => x.id === r.traveler_id);
     const text = r.confirmed_text || r.draft_text || '';
@@ -38,22 +56,75 @@
     const r=records.find(x=>x.id===id); if(!r)return;
     if(!r.confirmed_text && !r.draft_text)return toast('這份紀錄還沒有文字可以匯出');
     toast('正在製作圖片…');
-    try{const {canvas,t}=await canvasFor(r);canvas.toBlob(blob=>{const url=URL.createObjectURL(blob);downloadUrl(url,`${cleanName(t?.name)}-${recordTitle(r.record_type)}.png`);setTimeout(()=>URL.revokeObjectURL(url),2000);toast('圖片已匯出');},'image/png');}catch(e){console.error(e);toast('圖片匯出失敗，請再試一次');}
+    try{const {canvas,t}=await canvasFor(r);canvas.toBlob(blob=>{if(!blob)return toast('圖片建立失敗');const url=URL.createObjectURL(blob);downloadUrl(url,`${cleanName(t?.name)}-${recordTitle(r.record_type)}.png`);setTimeout(()=>URL.revokeObjectURL(url),2000);toast('圖片已匯出');},'image/png');}catch(e){console.error(e);toast('圖片匯出失敗，請再試一次');}
   }
   async function exportPdf(id){
     const r=records.find(x=>x.id===id); if(!r)return;
     if(!r.confirmed_text && !r.draft_text)return toast('這份紀錄還沒有文字可以匯出');
     if(!window.jspdf?.jsPDF)return toast('PDF 工具尚未載入，請重新整理後再試');
     toast('正在製作 PDF…');
-    try{const {canvas,t}=await canvasFor(r);const img=canvas.toDataURL('image/jpeg',.94);const {jsPDF}=window.jspdf;const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});const w=210,h=canvas.height*210/canvas.width;let y=0;pdf.addImage(img,'JPEG',0,y,210,h);while(h+y>297){y-=297;pdf.addPage();pdf.addImage(img,'JPEG',0,y,210,h);}pdf.save(`${cleanName(t?.name)}-${recordTitle(r.record_type)}.pdf`);toast('PDF 已匯出');}catch(e){console.error(e);toast('PDF 匯出失敗，請再試一次');}
+    try{
+      const {canvas,t}=await canvasFor(r);
+      const img=canvas.toDataURL('image/jpeg',.94);
+      const {jsPDF}=window.jspdf;
+      const pdf=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+      const pageW=210,pageH=297;
+      const imgH=canvas.height*pageW/canvas.width;
+      let offset=0;
+      pdf.addImage(img,'JPEG',0,offset,pageW,imgH);
+      let remaining=imgH-pageH;
+      while(remaining>0){offset-=pageH;pdf.addPage();pdf.addImage(img,'JPEG',0,offset,pageW,imgH);remaining-=pageH;}
+      pdf.save(`${cleanName(t?.name)}-${recordTitle(r.record_type)}.pdf`);
+      toast('PDF 已匯出');
+    }catch(e){console.error(e);toast('PDF 匯出失敗，請再試一次');}
   }
+
+  function enhanceRecordCards(){
+    const page=document.getElementById('recordsPage');
+    if(!page)return;
+    const templates=[...page.querySelectorAll('.record-grid .record-card')];
+    templates.forEach(card=>{
+      if(card.querySelector('.record-flow-note'))return;
+      const note=document.createElement('div');
+      note.className='record-flow-note';
+      note.textContent='整理文案 → 保存紀錄 → 匯出圖片／PDF';
+      card.appendChild(note);
+    });
+    const savedCard=document.getElementById('recordList')?.closest('.card');
+    if(savedCard && !savedCard.querySelector('.record-export-guide')){
+      const guide=document.createElement('div');
+      guide.className='record-export-guide';
+      guide.innerHTML='<strong>匯出紀錄</strong><span>文案保存後，這裡會直接出現「匯出圖片」與「匯出 PDF」。如果還沒有保存紀錄，請先從上方選擇初遇／拾光／同行整理文案。</span>';
+      const list=document.getElementById('recordList');
+      savedCard.insertBefore(guide,list);
+    }
+  }
+
   function addButtons(){
-    const list=document.getElementById('recordList'); if(!list || typeof records==='undefined')return;
+    const list=document.getElementById('recordList');
+    if(!list || typeof records==='undefined')return;
     const cards=[...list.querySelectorAll('.session-card')];
-    cards.forEach((card,i)=>{const r=records[i];if(!r||card.querySelector('.record-export-actions'))return;const box=document.createElement('div');box.className='record-export-actions';box.innerHTML=`<button class="small-btn" data-export-image="${r.id}">匯出圖片</button><button class="small-btn" data-export-pdf="${r.id}">匯出 PDF</button>`;card.appendChild(box);});
+    cards.forEach((card,i)=>{
+      const r=records[i];
+      if(!r||card.querySelector('.record-export-actions'))return;
+      const box=document.createElement('div');
+      box.className='record-export-actions';
+      box.innerHTML=`<button class="small-btn export-image" data-export-image="${r.id}">匯出圖片</button><button class="small-btn export-pdf" data-export-pdf="${r.id}">匯出 PDF</button>`;
+      card.appendChild(box);
+    });
     list.querySelectorAll('[data-export-image]').forEach(b=>b.onclick=()=>exportImage(b.dataset.exportImage));
     list.querySelectorAll('[data-export-pdf]').forEach(b=>b.onclick=()=>exportPdf(b.dataset.exportPdf));
   }
-  const observer=new MutationObserver(addButtons);
-  window.addEventListener('load',()=>{const list=document.getElementById('recordList');if(list){observer.observe(list,{childList:true,subtree:true});addButtons();}});
+
+  function refreshExportUi(){enhanceRecordCards();addButtons();}
+
+  window.addEventListener('load',()=>{
+    injectStyles();
+    const list=document.getElementById('recordList');
+    if(list){
+      const observer=new MutationObserver(refreshExportUi);
+      observer.observe(list,{childList:true,subtree:true});
+    }
+    refreshExportUi();
+  });
 })();
