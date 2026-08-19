@@ -1,4 +1,38 @@
 (() => {
+  // 穩定讀取：單一資料表暫時失敗時不讓整個首頁一起失效，並自動重試一次。
+  if (typeof loadAll === 'function') {
+    loadAll = async function(){
+      const query = async (name, run) => {
+        let result = await run();
+        if (result.error) {
+          await new Promise(r => setTimeout(r, 650));
+          result = await run();
+        }
+        if (result.error) console.error(`Shiguang ${name} load error:`, result.error);
+        return result;
+      };
+      try {
+        const [t,j,s,r] = await Promise.all([
+          query('travelers', () => sb.from('travelers').select('*').order('updated_at',{ascending:false})),
+          query('journeys', () => sb.from('journeys').select('*').order('start_date',{ascending:false})),
+          query('sessions', () => sb.from('sessions').select('*').order('session_date',{ascending:false})),
+          query('records', () => sb.from('records').select('*').order('updated_at',{ascending:false}))
+        ]);
+        if (!t.error) travelers=t.data||[];
+        if (!j.error) journeys=j.data||[];
+        if (!s.error) sessions=s.data||[];
+        if (!r.error) records=r.data||[];
+        renderAll();
+        const failed=[['旅人',t],['旅程',j],['相遇紀錄',s],['拾光冊',r]].filter(([,x])=>x.error).map(([n])=>n);
+        if(failed.length) toast(`${failed.join('、')}暫時讀取失敗，其他資料已正常載入`);
+      } catch(err) {
+        console.error('Shiguang loadAll fatal:',err);
+        renderAll();
+        toast('資料連線不穩定，請稍後重新整理');
+      }
+    };
+  }
+
   const escLight=s=>String(s||'').replace(/[&<>]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;'}[m]));
   function initialSessionForRecord(r){
     if(r?.record_type!=='初遇' || typeof sessions==='undefined') return null;
