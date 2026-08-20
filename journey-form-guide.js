@@ -22,5 +22,8 @@
     if(typeof openSession==='function'){
       const original=openSession;openSession=function(...args){const out=original.apply(this,args);setTimeout(updateGuide,0);return out;};
     }
+    if(!document.querySelector('script[data-booking-handoff]')){
+      const s=document.createElement('script');s.src='./booking-handoff.js?v=20260820';s.dataset.bookingHandoff='1';document.body.appendChild(s);
+    }
   });
 })();
