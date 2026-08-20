@@ -1,0 +1,205 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>想法展開室｜Prototype</title>
+<style>
+:root{--ink:#34322e;--muted:#777168;--bg:#f6f3ed;--paper:#fffdf8;--sage:#91a18e;--sage2:#e5ebe2;--clay:#bd897b;--sand:#eadbca;--gold:#b79866;--line:#ded8ce;--shadow:0 16px 45px rgba(57,49,40,.08)}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 15% 0,#eee7db 0,transparent 30%),var(--bg);color:var(--ink);font-family:"Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif}
+.wrap{max-width:820px;margin:auto;padding:20px 14px 110px}.brand{padding:14px 5px 24px;display:flex;justify-content:space-between;align-items:center}.brand b{font-size:19px}.brand span{font-size:12px;color:var(--muted)}
+.hero{background:var(--paper);border:1px solid var(--line);border-radius:30px;padding:30px 22px;box-shadow:var(--shadow)}
+.kicker{color:var(--clay);font-weight:800;letter-spacing:.15em;font-size:12px}.hero h1{font-size:32px;line-height:1.35;margin:10px 0}.hero p{color:var(--muted);line-height:1.8}
+textarea,input{width:100%;border:1px solid var(--line);border-radius:18px;padding:16px;background:white;font:inherit;color:var(--ink);outline:none}textarea{min-height:145px;line-height:1.7}.btn{border:0;border-radius:17px;padding:14px 18px;font:inherit;font-weight:800;cursor:pointer}.primary{background:var(--clay);color:white;width:100%;margin-top:12px}.ghost{background:white;border:1px solid var(--line);color:var(--ink)}.soft{background:var(--sage2);color:#596756}
+.stage{display:none;margin-top:18px}.stage.on{display:block!important}.card{background:var(--paper);border:1px solid var(--line);border-radius:25px;padding:22px;box-shadow:var(--shadow);margin-bottom:14px}
+.title{font-size:21px;font-weight:800;margin:4px 0 8px}.sub{font-size:13px;color:var(--muted);line-height:1.7}
+.tags{display:flex;flex-wrap:wrap;gap:8px;margin:15px 0}.tag{padding:9px 12px;border-radius:999px;background:var(--sage2);font-size:13px;font-weight:700}.suggest{border-left:3px solid var(--gold);padding:8px 0 8px 14px;margin:12px 0;line-height:1.7}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.choice{border:1px solid var(--line);background:white;border-radius:18px;padding:15px 12px;text-align:left;cursor:pointer}.choice b{display:block;margin-bottom:5px}.choice span{font-size:12px;color:var(--muted);line-height:1.5}.choice.sel{background:var(--sage2);border-color:var(--sage)}
+.row{display:flex;gap:10px;flex-wrap:wrap}.row .btn{flex:1}.meter{height:8px;border-radius:99px;background:#e9e4db;overflow:hidden;margin:12px 0}.meter i{display:block;height:100%;width:70%;background:linear-gradient(90deg,var(--sage),var(--gold))}
+.blueprint{display:grid;gap:10px}.bp{padding:14px;border-radius:17px;background:#faf7f1;border:1px solid var(--line)}.bp b{display:block;margin-bottom:5px}.prompt{white-space:pre-wrap;background:#302e2a;color:#f8f4ed;padding:18px;border-radius:18px;font-size:13px;line-height:1.75;max-height:440px;overflow:auto}
+.mini{font-size:12px;color:var(--muted)}.hide{display:none!important}
+@media(max-width:620px){.grid{grid-template-columns:1fr}.hero{padding:25px 17px}.hero h1{font-size:28px}.wrap{padding-left:12px;padding-right:12px}}
+</style></head>
+<body>
+<div class="wrap">
+  <div class="brand"><b>✦ 想法展開室</b><span>不是填問卷，是把想法長出來</span></div>
+
+  <section class="hero" id="start">
+    <div class="kicker">START WITH AN IDEA</div>
+    <h1>你現在腦中，<br>有什麼想做的？</h1>
+    <p>不用整理、不用知道專業名稱，也不用先想功能。把你現在想到的直接告訴我就好。</p>
+    <textarea id="idea" placeholder="例如：我是做美睫的，預約都在 LINE 裡，很容易亂掉。我也想記錄客人上次做什麼，順便知道每個月收入。"></textarea>
+    <button class="btn primary" id="expand" type="button">✦ 幫我展開這個想法</button><div id="tapStatus" class="mini" style="margin-top:10px"></div>
+  </section>
+
+  <section class="stage" id="insight">
+    <div class="card">
+      <div class="kicker">IDEA MAP</div><div class="title">我先把你的想法拆開了</div>
+      <div class="sub">這不是最後答案。先看看我理解的方向對不對，再決定要做到多深。</div>
+      <div class="tags" id="needTags"></div>
+      <div class="suggest"><b>你可能真正需要的，不只是一個頁面。</b><br><span id="interpret"></span></div>
+      <div class="suggest"><b>我會先替你補想這些：</b><br><span id="extras"></span></div>
+    </div>
+
+    <div class="card">
+      <div class="title">你想把它做到多深？</div>
+      <div class="grid" id="depth">
+        <button class="choice sel" data-depth="快速"><b>先做出來</b><span>保留最核心需求，快速得到可執行版本。</span></button>
+        <button class="choice" data-depth="完整"><b>幫我想完整</b><span>補上流程、資料、統計、自動化與容易漏掉的地方。</span></button>
+        <button class="choice" data-depth="產品"><b>做成真正的產品</b><span>再考慮多人使用、權限、雲端、商業化與未來擴充。</span></button>
+      </div>
+      <div class="row" style="margin-top:14px">
+        <button class="btn ghost" id="adjust">方向不太對</button>
+        <button class="btn soft" id="confirm">就是這個方向 →</button>
+      </div>
+    </div>
+  </section>
+
+  <section class="stage" id="refine">
+    <div class="card">
+      <div class="kicker">ONE MORE THING</div><div class="title">只差一點，我就能開始替你整理</div>
+      <p class="sub" id="smartQuestion">這個東西做出來後，你最希望自己第一眼看到什麼？</p>
+      <textarea id="answer" placeholder="不用完整，想到什麼就寫什麼。"></textarea>
+      <button class="btn primary" id="create">產生我的創造藍圖 ✦</button>
+    </div>
+  </section>
+
+  <section class="stage" id="result">
+    <div class="card">
+      <div class="kicker">CREATION BLUEPRINT</div><div class="title">你的想法，已經可以開始做了</div>
+      <div class="meter"><i></i></div><div class="mini">不是要求你回答完所有問題，而是資訊已足夠開始創造。</div>
+    </div>
+    <div class="card">
+      <div class="title">① 創造藍圖</div>
+      <div class="blueprint" id="blueprint"></div>
+    </div>
+    <div class="card">
+      <div class="title">② 第一版，我建議先做到這裡</div>
+      <div class="suggest" id="firstVersion"></div>
+      <div class="title" style="margin-top:18px">③ 之後可以長成</div>
+      <div class="suggest" id="future"></div>
+    </div>
+    <div class="card">
+      <div class="title">④ 可直接交給 AI 的製作指令</div>
+      <div class="prompt" id="prompt"></div>
+      <div class="row" style="margin-top:12px">
+        <button class="btn soft" id="copy">複製指令</button>
+        <button class="btn ghost" id="restart">換一個想法</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="kicker">NEXT</div><div class="title">做出來後，不滿意也不用重來</div>
+      <p class="sub">正式版可以加入「修改室」：把第一版哪裡不對告訴我，再替你產生第二階段修改指令。</p>
+      <input id="change" placeholder="例如：畫面太像後台、手機跑版、我要增加會員功能">
+      <button class="btn primary" id="modify">產生修改方向</button>
+      <div class="suggest hide" id="modifyOut"></div>
+    </div>
+  </section>
+</div>
+<script>
+const $=id=>document.getElementById(id);
+function safeScroll(el){
+  try { el.scrollIntoView({behavior:"smooth", block:"start"}); }
+  catch(e){ try { el.scrollIntoView(); } catch(_){} }
+}
+let depth="快速", profile={};
+function classify(text){
+  const rules=[
+    [/美睫|美甲|美容|美業|預約|客人/,["顧客","預約","服務紀錄","經營"]],
+    [/記帳|收入|支出|財務|錢/,["收支","分類","統計","預算"]],
+    [/課程|學生|教學|學員/,["課程","學員","進度","出席"]],
+    [/學習|讀書|複習|考試/,["計畫","進度","複習","目標"]],
+    [/自媒體|IG|instagram|貼文|短影音|內容/,["選題","內容","排程","成效"]],
+    [/產品|商品|賣|銷售|微商|訂單/,["產品","客戶","訂單","銷售"]],
+    [/文案|寫文|腳本/,["主題","受眾","內容","轉換"]]
+  ];
+  for(const [r,tags] of rules) if(r.test(text)) return tags;
+  return ["核心需求","資料整理","流程","成果"];
+}
+function buildProfile(text){
+  const tags=classify(text);
+  const joined=tags.join("、");
+  let interp=`我會把「${text.slice(0,55)}${text.length>55?"…":""}」整理成一個以 ${joined} 為核心的實用工具／成果，而不是先逼你決定技術。`;
+  let extras="資料怎麼留下、打開先看到什麼、哪些事情可以自動完成，以及第一版哪些其實不用急著做。";
+  if(tags.includes("顧客")) extras="顧客歷史、回訪、服務偏好、收款／營收、重複預約防呆，以及手機操作流程。";
+  if(tags.includes("收支")) extras="月／年統計、分類、固定與變動支出、預算、損益與備份。";
+  if(tags.includes("內容")) extras="內容支柱、發布狀態、素材、平台、內容日曆與成效回看。";
+  if(tags.includes("產品")) extras="產品定位、客戶、訂單狀態、付款／交付、銷售資料與後續追蹤。";
+  return {tags,interp,extras};
+}
+$("expand").addEventListener("click", function(){ $("tapStatus").textContent="正在展開你的想法…";
+  const text=$("idea").value.trim();
+  if(!text){alert("先告訴我一點點你的想法就好。");return}
+  profile=buildProfile(text);
+  $("needTags").innerHTML=profile.tags.map(x=>`<span class="tag">${x}</span>`).join("");
+  $("interpret").textContent=profile.interp;$("extras").textContent=profile.extras;
+  $("insight").classList.add("on");safeScroll($("insight")); $("tapStatus").textContent="✓ 已展開，請往下看";
+});
+document.querySelectorAll("#depth .choice").forEach(b=>b.onclick=()=>{
+ document.querySelectorAll("#depth .choice").forEach(x=>x.classList.remove("sel"));b.classList.add("sel");depth=b.dataset.depth;
+});
+$("adjust").onclick=()=>{ $("insight").classList.remove("on");$("idea").focus();try{window.scrollTo(0,0)}catch(e){} };
+$("confirm").onclick=()=>{
+ const tags=profile.tags||[];
+ let q="這個東西做出來後，你最希望自己第一眼看到什麼？";
+ if(tags.includes("顧客")) q="如果今天真的打開它，你最想先看到：今天的預約、顧客資料、收入，還是其他東西？";
+ if(tags.includes("收支")) q="你最想一打開就知道哪個數字？例如：本月花多少、剩多少、哪一類花最多？";
+ if(tags.includes("內容")) q="你最希望它先幫你解決：不知道發什麼、排程混亂、素材散落，還是看不懂成效？";
+ if(tags.includes("產品")) q="你現在最卡的是產品怎麼賣、訂單怎麼管、客戶怎麼追蹤，還是整個流程都想整理？";
+ $("smartQuestion").textContent=q;$("refine").classList.add("on");safeScroll($("refine"));
+};
+$("create").onclick=()=>{
+ const idea=$("idea").value.trim(), ans=$("answer").value.trim()||"請依核心需求規劃最直覺的首頁";
+ const tags=profile.tags||classify(idea);
+ const core=tags.join("、");
+ $("blueprint").innerHTML=[
+  ["核心想法",idea],["我理解的重點",core],["使用時最重要",ans],["創造深度",depth]
+ ].map(x=>`<div class="bp"><b>${x[0]}</b>${x[1]}</div>`).join("");
+ let first=`先做一個能真正解決「${core}」的核心版本。保留必要資料、清楚首頁、可新增／編輯／搜尋，以及和你的使用情境直接相關的功能。`;
+ let future= depth==="產品" ? "帳號登入、多人權限、雲端同步、正式資料庫、分享／商業化與可擴充架構。" :
+ depth==="完整" ? "統計、自動化、提醒、資料關聯、匯出與更完整的使用流程。" :
+ "等第一版真的用過，再依實際卡點增加統計、自動化或多人功能。";
+ $("firstVersion").textContent=first;$("future").textContent=future;
+ $("prompt").textContent=`我有一個想法，請不要只做視覺示意，而是把它做成真正可使用的第一版。
+
+【原始想法】
+${idea}
+
+【你需要抓住的核心】
+${core}
+
+【使用時我最在意】
+${ans}
+
+【我要的創造深度】
+${depth}
+
+【請你主動補全】
+請根據這個使用情境，主動補上我可能沒有想到、但實際使用會需要的資料欄位、頁面、功能、防呆、搜尋／篩選、統計或自動處理。不要為了功能多而堆功能；請區分「第一版必要」與「未來可以升級」。
+
+【製作方式】
+先用簡短文字告訴我：
+1. 你理解我要解決什麼
+2. 你建議的核心資料
+3. 第一版頁面與功能
+4. 哪些需求先不要做
+5. 最合適的技術方式與原因
+
+接著直接製作可實際操作的第一版。
+介面使用繁體中文，手機優先並支援 RWD。
+所有按鈕與功能必須真的可用，不要留下假按鈕。
+若只需單機使用，可優先採單一 HTML＋localStorage，並加入匯出／匯入備份；若需求涉及多人、跨裝置或登入，請改用適合的雲端與資料庫方案，不要硬套 localStorage。
+
+視覺請依我的用途自行提出一套協調、清楚、有質感的 Design Tokens，而不是套用固定模板。
+
+完成後請告訴我如何測試。第一版以「真的好用」優先，不追求一次做完所有功能。`;
+ $("result").classList.add("on");safeScroll($("result"));
+};
+$("copy").onclick=async()=>{try{await navigator.clipboard.writeText($("prompt").textContent);$("copy").textContent="✓ 已複製"}catch(e){alert("請長按指令文字複製")}};
+$("restart").onclick=()=>location.reload();
+$("modify").onclick=()=>{
+ const c=$("change").value.trim();if(!c){alert("先告訴我哪裡想改。");return}
+ $("modifyOut").classList.remove("hide");
+ $("modifyOut").textContent=`修改目標：${c}。請保留目前已正常運作的功能，不要整套重寫；先判斷造成問題的原因，再只修改相關介面、資料或邏輯。修改後請重新檢查手機版、既有資料與所有按鈕是否正常。`;
+};
+</script>
+</body></html>
