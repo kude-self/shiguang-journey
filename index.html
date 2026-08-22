@@ -1,16 +1,69 @@
 <!doctype html>
 <html lang="zh-Hant">
-<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>拾光所｜旅人紀錄系統</title><link rel="stylesheet" href="./styles.css"><style>body{background:#faf7f2}@media(max-width:900px){.top-actions{grid-template-columns:repeat(3,minmax(0,1fr))}.top-actions button{padding-left:8px;padding-right:8px;font-size:12px;white-space:normal;line-height:1.3}}@media(max-width:520px){.top-actions{grid-template-columns:1fr 1fr}.top-actions #newTravelerBtn{grid-column:1/-1}.top-actions button{font-size:13px}}</style><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script><script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script><script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script></head>
-<body><div id="toast"></div>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#faf7f2">
+<title>拾光所｜旅人紀錄系統</title>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{background:#faf7f2}
+@media(max-width:900px){
+  .top-actions{grid-template-columns:1fr 1fr!important}
+  .top-actions #newTravelerBtn{grid-column:1/-1}
+  .top-actions button{padding-left:8px;padding-right:8px;font-size:13px;white-space:normal;line-height:1.3}
+  dialog{width:100vw!important;max-width:100vw!important;height:100dvh!important;max-height:100dvh!important;margin:0!important;padding:10px!important;overflow:hidden!important}
+  .dialog-card{width:100%!important;max-width:100%!important;height:calc(100dvh - 20px)!important;max-height:none!important;overflow-y:auto!important;overflow-x:hidden!important;padding:16px 14px calc(24px + env(safe-area-inset-bottom))!important;border-radius:24px!important;-webkit-overflow-scrolling:touch}
+  .dialog-head{position:sticky!important;top:-16px!important;z-index:8!important;background:#fffdf9!important;padding:16px 0 10px!important;margin-top:-2px!important}
+  .dialog-actions{position:static!important;background:transparent!important;padding:14px 0 0!important;margin-top:8px!important;display:grid!important;grid-template-columns:1fr 1fr!important;gap:10px!important}
+  .dialog-actions button{width:100%!important;min-height:50px!important}
+  .form-grid{grid-template-columns:1fr!important}
+  .form-grid>label,.form-grid>.full{grid-column:1/-1!important}
+  .icon-btn{outline:none!important;box-shadow:none!important;-webkit-tap-highlight-color:transparent!important;border-radius:14px!important}
+  input,select,textarea{font-size:16px!important;max-width:100%!important}
+  textarea{min-height:116px!important}
+  .initial-light-block{padding:16px!important;border-radius:18px!important}
+}
+@media(max-width:420px){
+  dialog{padding:6px!important}
+  .dialog-card{height:calc(100dvh - 12px)!important;padding:14px 12px calc(20px + env(safe-area-inset-bottom))!important;border-radius:22px!important}
+  .dialog-head{top:-14px!important;padding-top:14px!important}
+  .dialog-head h3{font-size:22px!important}
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div id="toast"></div>
 <section id="authPage" class="auth-page hidden"><div class="auth-card"><div class="brand-mark">𓇼</div><h1>拾光所</h1><p class="subtitle">重新連線旅人資料</p><label>資料連線信箱<input id="authEmail" type="email" autocomplete="email"></label><label>資料連線密碼<input id="authPassword" type="password" autocomplete="current-password"></label><button class="primary wide" id="signInBtn">連線旅人資料</button><button class="ghost wide hidden" id="signUpBtn" type="button">建立帳號</button></div></section>
-<div id="app" class="app hidden"><aside class="sidebar"><div class="brand"><div class="brand-icon">𓇼</div><div><strong>拾光所</strong><span>旅人紀錄系統</span></div></div><nav><button class="nav active" data-page="dashboard">拾光首頁</button><button class="nav" data-page="travelers">旅人</button><button class="nav" data-page="journeys">旅程</button><button class="nav" data-page="sessions">相遇紀錄</button><button class="nav" data-page="records">拾光冊</button></nav><div class="side-bottom hidden"><div id="userEmail" class="user-email"></div><button class="ghost wide" id="signOutBtn">登出</button></div></aside><main class="main"><header class="topbar"><div><div class="eyebrow">SHIGUANG TRAVELER JOURNAL</div><h2 id="pageTitle">拾光首頁</h2></div><div class="top-actions"><button class="ghost" id="exportBtn">匯出資料備份</button><button class="primary" id="newTravelerBtn">＋ 新增旅人</button></div></header>
+<div id="app" class="app hidden">
+<aside class="sidebar"><div class="brand"><div class="brand-icon">𓇼</div><div><strong>拾光所</strong><span>旅人紀錄系統</span></div></div><nav><button class="nav active" data-page="dashboard">拾光首頁</button><button class="nav" data-page="travelers">旅人</button><button class="nav" data-page="journeys">旅程</button><button class="nav" data-page="sessions">相遇紀錄</button><button class="nav" data-page="records">拾光冊</button></nav><div class="side-bottom hidden"><div id="userEmail" class="user-email"></div><button class="ghost wide" id="signOutBtn">登出</button></div></aside>
+<main class="main"><header class="topbar"><div><div class="eyebrow">SHIGUANG TRAVELER JOURNAL</div><h2 id="pageTitle">拾光首頁</h2></div><div class="top-actions"><button class="ghost" id="exportBtn">匯出資料備份</button><button class="primary" id="newTravelerBtn">＋ 新增旅人</button></div></header>
 <section id="dashboardPage" class="page"><div class="stats"><div class="stat card"><span>全部旅人</span><strong id="statTotal">0</strong></div><div class="stat card"><span>初遇旅程</span><strong id="statMeet">0</strong></div><div class="stat card"><span>正在拾光</span><strong id="statLight">0</strong></div><div class="stat card"><span>一起同行</span><strong id="statWalk">0</strong></div></div><div class="two-col"><div class="card"><div class="section-head"><h3>最近的旅人</h3></div><div id="recentTravelers"></div></div><div class="card quote-card"><div class="eyebrow">THE LIGHT WE KEEP</div><blockquote>不是替旅人定義答案，<br>而是在一次次相遇裡，<br>把真正被看見的自己留下來。</blockquote></div></div></section>
 <section id="travelersPage" class="page hidden"><div class="card"><div class="section-head"><h3>旅人名單</h3><input id="travelerSearch" class="search" placeholder="搜尋旅人或主題"></div><div id="travelerList"></div></div></section>
-<section id="journeysPage" class="page hidden"><div class="journey-grid"><div class="card"><h3>初遇</h3><p class="muted">一場相遇，留下第一次看見。</p><div id="journeyMeet"></div></div><div class="card"><h3>拾光｜四週</h3><p class="muted">四週整理，把一路看見的自己留下來。</p><div id="journeyLight"></div></div><div class="card"><h3>同行｜三個月</h3><p class="muted">把真正發生在生活裡的改變留下來。</p><div id="journeyWalk"></div></div><div class="card"><h3>完成旅程</h3><div id="journeyDone"></div></div></div></section>
+<section id="journeysPage" class="page hidden"><div class="journey-grid"><div class="card"><h3>初遇</h3><p class="muted">一場相遇，留下第一次看見。</p><div id="journeyMeet"></div></div><div class="card"><h3>拾光｜四週</h3><p class="muted">四週整理，把一路看見的自己留下來。</p><div id="journeyLight"></div></div><div class="card"><h3>同行｜三個月</h3><p class="muted">三個月，把真正發生在生活裡的改變留下來。</p><div id="journeyWalk"></div></div><div class="card"><h3>完成旅程</h3><div id="journeyDone"></div></div></div></section>
 <section id="sessionsPage" class="page hidden"><div class="card"><div class="section-head"><h3>相遇紀錄</h3><button class="primary" id="newSessionBtn">＋ 新增紀錄</button></div><div id="sessionList"></div></div></section>
 <section id="recordsPage" class="page hidden"><div class="record-grid"><div class="card record-card"><span class="record-no">01</span><h3>初遇｜《初遇紀錄》</h3><p>一場相遇，留下第一次看見。</p><button class="ghost make-record" data-type="初遇">整理文案</button></div><div class="card record-card"><span class="record-no">03</span><h3>拾光｜《拾光紀錄》</h3><p>四週整理，把一路看見的自己留下來。</p><button class="ghost make-record" data-type="拾光">整理文案</button></div><div class="card record-card"><span class="record-no">06</span><h3>同行｜《旅程紀錄》</h3><p>三個月，把真正發生在生活裡的改變留下來。</p><button class="ghost make-record" data-type="同行">整理文案</button></div></div><div class="card" style="margin-top:18px"><div class="section-head"><h3>已保存的紀錄文案</h3></div><div id="recordList"></div></div></section>
-<section id="detailPage" class="page hidden"><button class="ghost" id="backBtn">← 回到旅人</button><div id="travelerDetail" style="margin-top:14px"></div></section></main></div>
-<dialog id="travelerDialog"><form method="dialog" class="dialog-card" id="travelerForm"><div class="dialog-head"><h3 id="travelerDialogTitle">新增旅人資料</h3><button type="button" class="icon-btn close-dialog">×</button></div><input type="hidden" id="travelerId"><div class="form-grid"><label>旅人稱呼<input id="travelerName" required></label><label>第一次相遇日期<input id="firstMeetingDate" type="date"></label><label class="full">此刻最想整理的事情<textarea id="concern"></textarea></label><label class="full">希望在旅程裡看見什麼<textarea id="hope"></textarea></label><label class="full">只給自己的備註<textarea id="privateNote"></textarea></label></div><div class="dialog-actions"><button type="button" class="ghost close-dialog">取消</button><button class="primary" value="default">儲存</button></div></form></dialog>
-<dialog id="sessionDialog"><form method="dialog" class="dialog-card" id="sessionForm"><div class="dialog-head"><h3>新增相遇紀錄</h3><button type="button" class="icon-btn close-session">×</button></div><input type="hidden" id="sessionId"><div class="form-grid"><label>旅人<select id="sessionTraveler" required></select></label><label>相遇日期<input id="sessionDate" type="date" required></label><label class="full">旅程階段<input id="sessionStage"></label><label class="full">這次帶來的是什麼？<textarea id="bring"></textarea></label><label class="full">這次看見了什麼？<textarea id="insight"></textarea></label><label class="full">旅人說過、值得留下的一句話<textarea id="importantQuote"></textarea></label><label class="full">這次看見的改變<textarea id="changeSeen"></textarea></label><label class="full">這次使用的陪伴方式<textarea id="method"></textarea></label><label class="full">想留給旅人的話<textarea id="leaveMessage"></textarea></label><label class="full">這次拾起的光<textarea id="pickedLight"></textarea></label></div><div class="dialog-actions"><button type="button" class="ghost close-session">取消</button><button class="primary" value="default">儲存紀錄</button></div></form></dialog>
+<section id="detailPage" class="page hidden"><button class="ghost" id="backBtn">← 回到旅人</button><div id="travelerDetail" style="margin-top:14px"></div></section>
+</main></div>
+<dialog id="travelerDialog"><form method="dialog" class="dialog-card" id="travelerForm"><div class="dialog-head"><h3 id="travelerDialogTitle">新增旅人資料</h3><button type="button" class="icon-btn close-dialog">×</button></div><input type="hidden" id="travelerId"><div class="form-grid"><label>旅人稱呼<input id="travelerName" required></label><label>第一次相遇日期<input id="firstMeetingDate" type="date"></label><label class="full">目前最在意的事情<textarea id="concern"></textarea></label><label class="full">希望這段旅程帶走什麼<textarea id="hope"></textarea></label><label class="full">只給自己的備註<textarea id="privateNote"></textarea></label></div><div class="dialog-actions"><button type="button" class="ghost close-dialog">取消</button><button class="primary" value="default">儲存</button></div></form></dialog>
+<dialog id="sessionDialog"><form method="dialog" class="dialog-card" id="sessionForm"><div class="dialog-head"><h3>新增相遇紀錄</h3><button type="button" class="icon-btn close-session">×</button></div><input type="hidden" id="sessionId"><div class="form-grid"><label>旅人<select id="sessionTraveler" required></select></label><label>相遇日期<input id="sessionDate" type="date" required></label><label class="full">旅程階段<input id="sessionStage"></label><label class="full">目前最明顯的情緒／狀態<textarea id="bring"></textarea></label><label class="full">這次看見了什麼？<textarea id="insight"></textarea></label><label class="full">旅人說過、值得留下的一句話<textarea id="importantQuote"></textarea></label><label class="full">此刻最在意／最卡住的地方<textarea id="changeSeen"></textarea></label><label class="full">這次使用的陪伴方式<textarea id="method"></textarea></label><label class="full">想留給旅人的一句話<textarea id="leaveMessage"></textarea></label><label class="full">這次想帶走的提醒<textarea id="pickedLight"></textarea></label></div><div class="dialog-actions"><button type="button" class="ghost close-session">取消</button><button class="primary" value="default">儲存紀錄</button></div></form></dialog>
 <dialog id="recordDialog"><form method="dialog" class="dialog-card" id="recordForm"><div class="dialog-head"><h3 id="recordDialogTitle">整理紀錄文案</h3><button type="button" class="icon-btn close-record">×</button></div><input type="hidden" id="recordId"><label>旅人<select id="recordTraveler" required></select></label><input type="hidden" id="recordType"><label>文案草稿<textarea id="draftText" class="tall"></textarea></label><label>確認後文字<textarea id="confirmedText" class="tall"></textarea></label><label>狀態<select id="recordStatus"><option value="draft">草稿</option><option value="confirmed">已確認</option></select></label><div class="dialog-actions"><button type="button" class="ghost close-record">取消</button><button class="primary" value="default">保存文案</button></div></form></dialog>
-<script src="./app.js"></script><script src="./record-export.js"></script><script src="./initial-light.js"></script><script src="./initial-record-light.js"></script><script src="./dashboard-workspace.js"></script><script src="./journey-form-guide.js"></script><script src="./backup-restore.js"></script><script src="./journey-delete.js"></script></body></html>
+<script src="./app.js"></script>
+<script>
+if(typeof sessionPrompts!=="undefined"){
+  sessionPrompts.初遇={stage:["這次最想整理的事情","例如：關係、工作、選擇、卡住的地方"],bring:"目前最明顯的情緒／狀態（可記 2–3 個）",insight:"這次看見了什麼？",importantQuote:"旅人說過、值得留下的一句話",changeSeen:"此刻最在意／最卡住的地方",method:"這次使用的陪伴方式（可留空）",leaveMessage:"想留給旅人的一句話",pickedLight:"這次想帶走的提醒"};
+  sessionPrompts.拾光={stage:["旅程週次","Week 1 看見／Week 2 整理／Week 3 練習／Week 4 回顧"],bring:"這週最明顯的事件／情緒",insight:"這週看見了什麼？",importantQuote:"這週值得留下的一句話",changeSeen:"正在分辨的外界聲音、害怕／習慣與真正感受",method:"這週使用的陪伴方式（可留空）",leaveMessage:"這週想練習的一個選擇／微行動",pickedLight:"下一週想帶著什麼繼續走"};
+  sessionPrompts.同行={stage:["旅程節點","例如：第 1 次、第 2 次"],bring:"這兩週真實生活中發生了什麼",insight:"這次看見了什麼？",importantQuote:"值得留下的一句話",changeSeen:"這次出現的舊模式／新選擇",method:"這次使用的陪伴方式（可留空）",leaveMessage:"接下來要帶回生活的行動",pickedLight:"接下來想持續練習的方向"};
+}
+</script>
+<script src="./record-export.js"></script>
+<script src="./initial-light.js"></script>
+<script src="./initial-record-light.js"></script>
+<script src="./dashboard-workspace.js"></script>
+<script src="./journey-form-guide.js"></script>
+<script src="./backup-restore.js"></script>
+<script src="./journey-delete.js"></script>
+</body></html>
